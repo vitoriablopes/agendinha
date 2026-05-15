@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendinha de Energia</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --panel: #ffffff;
+      --text: #1d1d1f;
+      --muted: #747474;
+      --line: #deded8;
+      --soft: #f0f0ec;
+      --soft-2: #fbfbf9;
+      --ok: #1f7a4d;
+      --bad: #b42318;
+      --warn: #9a6200;
+      --task: #eeeeea;
+      --radius: 16px;
+      --shadow: 0 12px 30px rgba(0, 0, 0, .06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: .42; transform: none; }
+
+    .app {
+      min-height: 100vh;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+
+    .pill-field label {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .pill-field input {
+      width: 56px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      text-align: center;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 13px;
+    }
+
+    .btn:hover { box-shadow: 0 8px 20px rgba(0,0,0,.08); }
+
+    .btn.primary {
+      background: var(--text);
+      border-color: var(--text);
+      color: #fff;
+    }
+
+    .btn.secondary { background: #fff; color: var(--muted); }
+    .btn.small { padding: 5px 8px; font-size: 11px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 330px) 1fr;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    aside, .planner {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 0;
+    }
+
+    aside {
+      padding: 14px;
+      overflow: auto;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .hint {
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .field { display: grid; gap: 4px; }
+    .field label { font-size: 11px; color: var(--muted); }
+
+    .field input, .field select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 9px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus, .field select:focus, textarea:focus,
+    .subtask-title:focus, .new-subtask-input:focus {
+      border-color: #c5c5bf;
+      box-shadow: 0 0 0 3px rgba(0,0,0,.035);
+    }
+
+    textarea {
+      min-height: 118px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .task-input-row {
+      display: grid;
+      grid-template-columns: 1fr 76px 76px;
+      gap: 8px;
+    }
+
+    .quick-task, .category-form, .share-panel {
+      display: grid;
+      gap: 9px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--soft-2);
+    }
+
+    .form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .form-actions .btn { flex: 1; }
+
+    .legend-list { display: grid; gap: 4px; }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 1fr 24px;
+      align-items: center;
+      gap: 4px;
+      border-radius: 10px;
+    }
+
+    .legend-row.active { background: var(--soft); }
+
+    .legend-select {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      padding: 5px 6px;
+      border-radius: 10px;
+      min-width: 0;
+    }
+
+    .legend-select:hover { background: var(--soft-2); box-shadow: none; }
+
+    .legend-icon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .legend-name {
+      font-size: 13px;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .remove-category {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      width: 24px;
+      height: 24px;
+      line-height: 1;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .remove-category:hover {
+      color: var(--bad);
+      background: rgba(180,35,24,.07);
+      box-shadow: none;
+    }
+
+    .planner {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .days-header, .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      min-width: 1040px;
+    }
+
+    .days-header {
+      border-bottom: 1px solid var(--line);
+      background: var(--soft-2);
+    }
+
+    .day-head {
+      border-right: 1px solid var(--line);
+      padding: 10px 8px;
+      display: grid;
+      gap: 8px;
+      background: var(--soft-2);
+    }
+
+    .day-head:last-child, .day-col:last-child { border-right: 0; }
+
+    .day-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .day-name { font-size: 13px; font-weight: 800; }
+
+    .day-status {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 3px 7px;
+      background: #fff;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .day-status.ok { color: var(--ok); border-color: rgba(31,122,77,.25); background: rgba(31,122,77,.06); }
+    .day-status.bad { color: var(--bad); border-color: rgba(180,35,24,.25); background: rgba(180,35,24,.06); }
+    .day-status.warn { color: var(--warn); border-color: rgba(154,98,0,.25); background: rgba(154,98,0,.06); }
+
+    .initial-energy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .initial-energy input {
+      width: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 5px 6px;
+      background: #fff;
+      text-align: center;
+      outline: none;
+    }
+
+    .calendar-scroll { min-height: 0; overflow: auto; }
+
+    .week-grid { min-height: calc(100vh - 150px); }
+
+    .day-col {
+      border-right: 1px solid var(--line);
+      padding: 10px 8px;
+      background: #fff;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+    }
+
+    .task {
+      border: 1px solid rgba(0,0,0,.11);
+      border-radius: 13px;
+      padding: 8px;
+      background: var(--task);
+      display: grid;
+      gap: 6px;
+    }
+
+    .task.done { color: #8a8a86; background: #f0f0ec; }
+    .task.blocked { background: #fff4f2; border-color: rgba(180,35,24,.45); outline: 2px solid rgba(180,35,24,.12); }
+
+    .task-main {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      align-items: start;
+      gap: 7px;
+    }
+
+    .task-icon {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      border-radius: 999px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .task-icon:hover { background: rgba(0,0,0,.055); box-shadow: none; }
+
+    .task-title {
+      min-width: 0;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      padding: 2px 2px 4px;
+      outline: none;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 750;
+      line-height: 1.3;
+      min-height: calc(1.3em + 6px);
+      resize: none;
+      overflow: hidden;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .task.done .task-title { text-decoration: line-through; color: #8a8a86; }
+
+    .task-details {
+      display: none;
+      grid-template-columns: 1fr 72px 72px;
+      gap: 7px;
+    }
+
+    .task.open .task-details { display: grid; }
+
+    .task-tools {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .task-check { width: 16px; height: 16px; accent-color: var(--text); }
+
+    .mini-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 11px;
+      padding: 4px 7px;
+    }
+
+    .mini-btn:hover { color: var(--text); border-color: #c5c5bf; box-shadow: none; }
+    .mini-btn.danger:hover { color: var(--bad); border-color: rgba(180,35,24,.35); }
+
+    .energy-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-left: auto;
+    }
+
+    .energy-badge {
+      font-size: 10.5px;
+      font-weight: 850;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 3px 6px;
+      white-space: nowrap;
+    }
+
+    .energy-badge.plus { color: var(--ok); border-color: rgba(31,122,77,.25); background: rgba(31,122,77,.06); }
+    .energy-badge.minus { color: var(--bad); border-color: rgba(180,35,24,.25); background: rgba(180,35,24,.06); }
+
+    .checklist-toggle {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .task.checklist-open .checklist-toggle { transform: rotate(180deg); }
+
+    .checklist {
+      display: none;
+      gap: 6px;
+      padding-top: 2px;
+    }
+
+    .task.checklist-open .checklist { display: grid; }
+    .subtask-list { display: grid; gap: 5px; }
+
+    .subtask-row {
+      display: grid;
+      grid-template-columns: 16px 1fr 22px;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .subtask-check { width: 14px; height: 14px; accent-color: var(--text); }
+
+    .subtask-title {
+      width: 100%;
+      border: 0;
+      background: rgba(255,255,255,.62);
+      border-radius: 8px;
+      padding: 5px 7px;
+      outline: none;
+      font-size: 11.5px;
+      line-height: 1.3;
+    }
+
+    .subtask-row.done .subtask-title {
+      text-decoration: line-through;
+      color: #8a8a86;
+      background: rgba(255,255,255,.42);
+    }
+
+    .delete-subtask {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+    }
+
+    .add-subtask-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+    }
+
+    .new-subtask-input {
+      border: 0;
+      background: rgba(255,255,255,.72);
+      border-radius: 9px;
+      padding: 6px 8px;
+      outline: none;
+      font-size: 11.5px;
+    }
+
+    .warning-text { color: var(--bad); font-size: 11px; line-height: 1.3; }
+    .warning-text.warn { color: var(--warn); }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(440px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--text);
+      color: white;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: .2s ease;
+      z-index: 10;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      .app { padding: 12px; }
+      header { flex-direction: column; }
+      .top-actions { justify-content: flex-start; }
+      .layout { grid-template-columns: 1fr; }
+      aside { max-height: 58vh; }
+    }
+
+    @media (max-width: 560px) {
+      .task-input-row, .row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Agendinha</h1>
+        <p class="subtitle">Planeje a semana e acompanhe o saldo de energia de cada dia.</p>
+      </div>
+
+      <div class="top-actions">
+        <div class="pill-field">
+          <label for="maxEnergy">Energia máxima</label>
+          <input id="maxEnergy" type="number" min="1" step="1" />
+        </div>
+        <button class="btn secondary" id="clearDone" type="button">Limpar feitas</button>
+        <button class="btn secondary" id="resetWeek" type="button">Resetar semana</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside>
+        <section>
+          <div class="section-title"><h2>Categorias</h2></div>
+          <div id="categoryList" class="legend-list"></div>
+        </section>
+
+        <section class="quick-task" id="quickTaskCard" hidden>
+          <div class="section-title"><h2>Nova tarefa</h2></div>
+          <div class="field">
+            <label>Categoria</label>
+            <input id="quickCategoryName" type="text" disabled />
+          </div>
+          <div class="task-input-row">
+            <div class="field">
+              <label for="quickTitle">Nome</label>
+              <input id="quickTitle" type="text" placeholder="Ex: estudar Física 3" />
+            </div>
+            <div class="field">
+              <label for="quickEnergy">Energia</label>
+              <input id="quickEnergy" type="number" step="1" placeholder="-2" />
+            </div>
+            <div class="field">
+              <label for="quickMinEnergy">Mín.</label>
+              <input id="quickMinEnergy" type="number" min="0" step="1" placeholder="2" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="quickDay">Dia</label>
+            <select id="quickDay"></select>
+          </div>
+          <div class="form-actions">
+            <button id="addQuickTask" class="btn primary" type="button">Adicionar</button>
+          </div>
+        </section>
+
+        <section class="category-form">
+          <div class="section-title"><h2>Adicionar categoria</h2></div>
+          <div class="row-3">
+            <div class="field">
+              <label for="newIcon">Ícone</label>
+              <select id="newIcon"></select>
+            </div>
+            <div class="field">
+              <label for="newCategory">Nome</label>
+              <input id="newCategory" type="text" placeholder="Ex: estudo" />
+            </div>
+            <button id="addCategory" class="btn" type="button">Adicionar</button>
+          </div>
+        </section>
+
+        <section class="share-panel">
+          <div>
+            <h2>Salvar sem nuvem</h2>
+            <p class="hint">Copie o estado atual e cole depois para restaurar a agenda.</p>
+          </div>
+          <button id="copyState" class="btn primary" type="button">Copiar estado atual</button>
+          <div class="field">
+            <label for="stateBox">Estado salvo</label>
+            <textarea id="stateBox" placeholder="Cole aqui o texto exportado da sua agenda..."></textarea>
+          </div>
+          <button id="applyState" class="btn" type="button">Aplicar estado colado</button>
+        </section>
+      </aside>
+
+      <section class="planner">
+        <div id="daysHeader" class="days-header"></div>
+        <div class="calendar-scroll">
+          <div id="weekGrid" class="week-grid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    "use strict";
+
+    const DAYS = [
+      { key: "mon", label: "Segunda" },
+      { key: "tue", label: "Terça" },
+      { key: "wed", label: "Quarta" },
+      { key: "thu", label: "Quinta" },
+      { key: "fri", label: "Sexta" },
+      { key: "sat", label: "Sábado" },
+      { key: "sun", label: "Domingo" }
+    ];
+
+    const ICONS = [
+      "📚", "✏️", "🧠", "💻", "📊", "🧮", "🧪", "🔬", "📐", "🛠️", "⚙️", "🏗️",
+      "📝", "📌", "📅", "⏰", "📞", "💬", "📧", "🤝", "🎯", "🚀", "💡", "⭐",
+      "🏃", "🧘", "💪", "🚶", "🍽️", "🥗", "☕", "💧", "🛒", "🧹", "🧺", "🛏️",
+      "🎨", "🎧", "🎬", "📖", "🌿", "🐾", "❤️", "✨", "🔥", "🌙", "☀️", "⚡",
+      "🚌", "🚗", "🚇", "🏠", "🏫", "🏢", "💰", "📦", "🔔", "✅", "🟢", "🔴"
+    ];
+
+    const DEFAULT_CATEGORIES = [
+      { id: "cat-study", icon: "📚", name: "Estudo" },
+      { id: "cat-work", icon: "💻", name: "Trabalho" },
+      { id: "cat-health", icon: "💪", name: "Saúde" },
+      { id: "cat-home", icon: "🏠", name: "Casa" },
+      { id: "cat-rest", icon: "🌿", name: "Descanso" }
+    ];
+
+    function createEmptyDays(initialEnergy = 6) {
+      return Object.fromEntries(DAYS.map(day => [day.key, { initialEnergy, tasks: [] }]));
+    }
+
+    function defaultState() {
+      return {
+        app: "agendinha-de-energia",
+        version: 3,
+        maxEnergy: 10,
+        selectedCategoryId: "cat-study",
+        selectedDay: "mon",
+        categories: DEFAULT_CATEGORIES.map(category => ({ ...category })),
+        days: createEmptyDays(6)
+      };
+    }
+
+    let state = defaultState();
+
+    const els = {
+      maxEnergy: document.getElementById("maxEnergy"),
+      clearDone: document.getElementById("clearDone"),
+      resetWeek: document.getElementById("resetWeek"),
+      categoryList: document.getElementById("categoryList"),
+      quickTaskCard: document.getElementById("quickTaskCard"),
+      quickCategoryName: document.getElementById("quickCategoryName"),
+      quickTitle: document.getElementById("quickTitle"),
+      quickEnergy: document.getElementById("quickEnergy"),
+      quickMinEnergy: document.getElementById("quickMinEnergy"),
+      quickDay: document.getElementById("quickDay"),
+      addQuickTask: document.getElementById("addQuickTask"),
+      newIcon: document.getElementById("newIcon"),
+      newCategory: document.getElementById("newCategory"),
+      addCategory: document.getElementById("addCategory"),
+      copyState: document.getElementById("copyState"),
+      stateBox: document.getElementById("stateBox"),
+      applyState: document.getElementById("applyState"),
+      daysHeader: document.getElementById("daysHeader"),
+      weekGrid: document.getElementById("weekGrid"),
+      toast: document.getElementById("toast")
+    };
+
+    function uid(prefix = "id") {
+      if (window.crypto && typeof crypto.randomUUID === "function") return `${prefix}-${crypto.randomUUID()}`;
+      return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2800);
+    }
+
+    function toNumber(value, fallback = 0) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : fallback;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHTML(value).replace(/`/g, "&#096;");
+    }
+
+    function getCategory(id) {
+      return state.categories.find(category => category.id === id) || state.categories[0];
+    }
+
+    function minimumRequiredForDemand(energy) {
+      return Math.abs(Math.min(toNumber(energy, 0), 0));
+    }
+
+    function normalizeMinEnergy(energy, minEnergy) {
+      return Math.max(minimumRequiredForDemand(energy), Math.max(0, toNumber(minEnergy, 0)));
+    }
+
+    function enforceQuickMinEnergy() {
+      const minimum = minimumRequiredForDemand(els.quickEnergy.value);
+      els.quickMinEnergy.min = String(minimum);
+      if (els.quickMinEnergy.value !== "" && toNumber(els.quickMinEnergy.value, 0) < minimum) {
+        els.quickMinEnergy.value = String(minimum);
+      }
+    }
+
+    function autoResizeTextarea(textarea) {
+      if (!textarea) return;
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
+    function energyClass(value) {
+      const number = toNumber(value, 0);
+      if (number > 0) return "plus";
+      if (number < 0) return "minus";
+      return "neutral";
+    }
+
+    function energyLabel(value) {
+      const number = toNumber(value, 0);
+      return number > 0 ? `+${number}` : `${number}`;
+    }
+
+    function normalizeCategory(rawCategory, index) {
+      return {
+        id: String(rawCategory?.id || uid(`cat-${index}`)),
+        icon: String(rawCategory?.icon || "📌"),
+        name: String(rawCategory?.name || "Categoria")
+      };
+    }
+
+    function normalizeSubtask(rawSubtask, index) {
+      return {
+        id: String(rawSubtask?.id || uid(`subtask-${index}`)),
+        title: String(rawSubtask?.title || rawSubtask?.name || "Subtarefa"),
+        done: Boolean(rawSubtask?.done || rawSubtask?.completed)
+      };
+    }
+
+    function normalizeTask(rawTask, categories, index) {
+      const energy = toNumber(rawTask?.energy ?? rawTask?.energyChange ?? rawTask?.amount, 0);
+      const fallbackCategoryId = categories[0].id;
+      const rawCategoryId = String(rawTask?.categoryId || rawTask?.category || fallbackCategoryId);
+      const categoryId = categories.some(category => category.id === rawCategoryId) ? rawCategoryId : fallbackCategoryId;
+
+      return {
+        id: String(rawTask?.id || uid(`task-${index}`)),
+        categoryId,
+        title: String(rawTask?.title || rawTask?.name || "Nova tarefa"),
+        energy,
+        minEnergy: normalizeMinEnergy(energy, rawTask?.minEnergy ?? rawTask?.minimumEnergy),
+        done: Boolean(rawTask?.done || rawTask?.completed),
+        detailsOpen: Boolean(rawTask?.detailsOpen),
+        checklistOpen: Boolean(rawTask?.checklistOpen),
+        subtasks: Array.isArray(rawTask?.subtasks) ? rawTask.subtasks.map(normalizeSubtask) : []
+      };
+    }
+
+    function ensureValidState(rawInput) {
+      const input = unwrapImportedState(rawInput);
+
+      if (isOldEnergyPlannerState(input)) return convertOldEnergyPlannerState(input);
+      if (isPlainWeekState(input)) return convertPlainWeekState(input);
+
+      const base = defaultState();
+      const categories = Array.isArray(input?.categories) && input.categories.length
+        ? input.categories.map(normalizeCategory)
+        : base.categories;
+
+      const daysSource = input?.days && typeof input.days === "object" ? input.days : base.days;
+      const maxEnergy = Math.max(1, toNumber(input?.maxEnergy, base.maxEnergy));
+      const selectedCategoryId = categories.some(category => category.id === input?.selectedCategoryId)
+        ? input.selectedCategoryId
+        : categories[0].id;
+      const selectedDay = DAYS.some(day => day.key === input?.selectedDay) ? input.selectedDay : "mon";
+
+      const next = {
+        app: "agendinha-de-energia",
+        version: 3,
+        maxEnergy,
+        selectedCategoryId,
+        selectedDay,
+        categories,
+        days: {}
+      };
+
+      DAYS.forEach(day => {
+        const sourceDay = daysSource[day.key] || {};
+        const initialEnergy = clamp(toNumber(sourceDay.initialEnergy, 6), 0, maxEnergy);
+        const tasks = Array.isArray(sourceDay.tasks) ? sourceDay.tasks : [];
+        next.days[day.key] = {
+          initialEnergy,
+          tasks: tasks.map((task, index) => normalizeTask(task, categories, index))
+        };
+      });
+
+      return next;
+    }
+
+    function unwrapImportedState(input) {
+      if (!input || typeof input !== "object") throw new Error("O texto colado não contém um objeto JSON válido.");
+      if (input.state && typeof input.state === "object") return input.state;
+      if (input.data && typeof input.data === "object") return input.data;
+      if (input.plan && typeof input.plan === "object") return input.plan;
+      return input;
+    }
+
+    function isOldEnergyPlannerState(input) {
+      return Boolean(input && Array.isArray(input.taskTemplates) && Array.isArray(input.scheduledTasks));
+    }
+
+    function isPlainWeekState(input) {
+      return Boolean(input && Array.isArray(input.categories) && Array.isArray(input.days));
+    }
+
+    function convertOldEnergyPlannerState(input) {
+      const converted = defaultState();
+      converted.version = 3;
+      converted.maxEnergy = Math.max(1, toNumber(input.maxEnergy, 10));
+      converted.categories = [{ id: "cat-imported", icon: "📌", name: "Importadas" }];
+      converted.selectedCategoryId = "cat-imported";
+
+      const initialEnergy = Array.isArray(input.initialEnergy) ? input.initialEnergy : [];
+      DAYS.forEach((day, index) => {
+        converted.days[day.key].initialEnergy = clamp(toNumber(initialEnergy[index], 6), 0, converted.maxEnergy);
+        converted.days[day.key].tasks = [];
+      });
+
+      input.scheduledTasks.forEach((task, index) => {
+        const dayIndex = clamp(Math.floor(toNumber(task.dayIndex, 0)), 0, 6);
+        const energy = toNumber(task.energyChange ?? task.energy, 0);
+        converted.days[DAYS[dayIndex].key].tasks.push({
+          id: String(task.id || uid(`task-${index}`)),
+          categoryId: "cat-imported",
+          title: String(task.name || task.title || "Tarefa importada"),
+          energy,
+          minEnergy: normalizeMinEnergy(energy, task.minEnergy),
+          done: Boolean(task.done),
+          detailsOpen: false,
+          checklistOpen: false,
+          subtasks: []
+        });
+      });
+
+      return converted;
+    }
+
+    function convertPlainWeekState(input) {
+      const mapped = { ...input, days: {} };
+      DAYS.forEach((day, index) => {
+        const sourceDay = input.days[index] || input.days[day.key] || {};
+        mapped.days[day.key] = sourceDay;
+      });
+      return ensureValidState(mapped);
+    }
+
+    function parseStateText(rawText) {
+      const candidates = buildImportCandidates(rawText);
+      const errors = [];
+
+      for (const candidate of candidates) {
+        try {
+          return JSON.parse(candidate);
+        } catch (error) {
+          errors.push(error.message);
+        }
+      }
+
+      throw new Error(`JSON inválido ou incompleto. Tentativas: ${errors.slice(0, 3).join(" | ")}`);
+    }
+
+    function buildImportCandidates(rawText) {
+      let text = String(rawText || "");
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+      text = text
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .trim();
+
+      const candidates = [];
+      addCandidate(candidates, text);
+
+      const fencedMatches = [...text.matchAll(/```(?:json|javascript|js)?\s*([\s\S]*?)```/gi)];
+      fencedMatches.forEach(match => addCandidate(candidates, match[1].trim()));
+
+      const objectCandidate = extractBalancedJsonObject(text);
+      if (objectCandidate) addCandidate(candidates, objectCandidate);
+
+      return candidates;
+    }
+
+    function addCandidate(candidates, value) {
+      const candidate = String(value || "").trim();
+      if (candidate && !candidates.includes(candidate)) candidates.push(candidate);
+    }
+
+    function extractBalancedJsonObject(text) {
+      const start = text.indexOf("{");
+      if (start === -1) return null;
+
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+
+      for (let i = start; i < text.length; i += 1) {
+        const char = text[i];
+
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (char === "\\") {
+            escaped = true;
+          } else if (char === '"') {
+            inString = false;
+          }
+          continue;
+        }
+
+        if (char === '"') inString = true;
+        if (char === "{") depth += 1;
+        if (char === "}") depth -= 1;
+
+        if (depth === 0) return text.slice(start, i + 1);
+      }
+
+      return null;
+    }
+
+    function calculateDay(dayKey) {
+      const day = state.days[dayKey];
+      const maxEnergy = Math.max(1, toNumber(state.maxEnergy, 10));
+      let energy = clamp(toNumber(day.initialEnergy, 0), 0, maxEnergy);
+      const taskStatus = {};
+      let blockedCount = 0;
+
+      day.tasks.forEach(task => {
+        const demand = toNumber(task.energy, 0);
+        const required = normalizeMinEnergy(demand, task.minEnergy);
+        let after = energy;
+        let blocked = false;
+        let capped = false;
+        let reason = null;
+
+        if (energy < required) {
+          blocked = true;
+          reason = "minimum";
+          blockedCount += 1;
+        } else {
+          after = energy + demand;
+          if (after < 0) {
+            blocked = true;
+            reason = "negative";
+            blockedCount += 1;
+            after = energy;
+          } else if (after > maxEnergy) {
+            capped = true;
+            after = maxEnergy;
+          }
+        }
+
+        taskStatus[task.id] = { before: energy, after, blocked, capped, reason, required };
+        energy = after;
+      });
+
+      return { finalEnergy: energy, taskStatus, blockedCount };
+    }
+
+    function getStatusClass(result) {
+      if (result.blockedCount > 0) return "bad";
+      if (result.finalEnergy / Math.max(1, state.maxEnergy) <= 0.25) return "warn";
+      return "ok";
+    }
+
+    function getStatusText(result) {
+      if (result.blockedCount > 0) return "Problema";
+      if (result.finalEnergy / Math.max(1, state.maxEnergy) <= 0.25) return "Baixa";
+      return "OK";
+    }
+
+    function normalizeStateBeforeRender() {
+      state = ensureValidState(state);
+    }
+
+    function renderIconOptions() {
+      els.newIcon.innerHTML = ICONS.map(icon => `<option value="${icon}">${icon}</option>`).join("");
+    }
+
+    function renderQuickDayOptions() {
+      els.quickDay.innerHTML = DAYS.map(day => `<option value="${day.key}">${day.label}</option>`).join("");
+      els.quickDay.value = state.selectedDay;
+    }
+
+    function renderCategories() {
+      els.categoryList.innerHTML = state.categories.map(category => `
+        <div class="legend-row ${category.id === state.selectedCategoryId ? "active" : ""}" data-category-id="${escapeAttribute(category.id)}">
+          <button class="legend-select" type="button" data-action="select-category">
+            <span class="legend-icon">${escapeHTML(category.icon)}</span>
+            <span class="legend-name">${escapeHTML(category.name)}</span>
+          </button>
+          <button class="remove-category" type="button" data-action="remove-category" title="Remover categoria">×</button>
+        </div>
+      `).join("");
+    }
+
+    function openQuickTask(categoryId) {
+      const category = getCategory(categoryId);
+      if (!category) return;
+      state.selectedCategoryId = category.id;
+      els.quickTaskCard.hidden = false;
+      els.quickCategoryName.value = `${category.icon} ${category.name}`;
+      els.quickDay.value = state.selectedDay;
+      els.quickTitle.focus();
+    }
+
+    function deleteCategory(categoryId) {
+      if (!state.categories.some(category => category.id === categoryId)) return;
+      if (state.categories.length <= 1) {
+        showToast("Mantenha pelo menos uma categoria.");
+        return;
+      }
+
+      const fallback = state.categories.find(category => category.id !== categoryId);
+      state.categories = state.categories.filter(category => category.id !== categoryId);
+
+      Object.values(state.days).forEach(day => {
+        day.tasks.forEach(task => {
+          if (task.categoryId === categoryId) task.categoryId = fallback.id;
+        });
+      });
+
+      if (state.selectedCategoryId === categoryId) state.selectedCategoryId = fallback.id;
+      render();
+      showToast("Categoria removida.");
+    }
+
+    function renderHeader() {
+      els.daysHeader.innerHTML = "";
+      DAYS.forEach(dayInfo => {
+        const result = calculateDay(dayInfo.key);
+        const day = state.days[dayInfo.key];
+        const cell = document.createElement("div");
+        cell.className = "day-head";
+        cell.innerHTML = `
+          <div class="day-row">
+            <div class="day-name">${dayInfo.label}</div>
+            <div class="day-status ${getStatusClass(result)}">${getStatusText(result)} · ${result.finalEnergy}/${state.maxEnergy}</div>
+          </div>
+          <label class="initial-energy">
+            início
+            <input type="number" min="0" step="1" value="${day.initialEnergy}" data-day="${dayInfo.key}">
+          </label>
+        `;
+
+        cell.querySelector("input").addEventListener("change", event => {
+          state.days[dayInfo.key].initialEnergy = clamp(toNumber(event.target.value, 0), 0, state.maxEnergy);
+          state.selectedDay = dayInfo.key;
+          render();
+        });
+
+        els.daysHeader.appendChild(cell);
+      });
+    }
+
+    function renderWeek() {
+      els.weekGrid.innerHTML = "";
+      DAYS.forEach(dayInfo => {
+        const day = state.days[dayInfo.key];
+        const result = calculateDay(dayInfo.key);
+        const col = document.createElement("div");
+        col.className = "day-col";
+        col.dataset.day = dayInfo.key;
+
+        day.tasks.forEach((task, index) => {
+          col.appendChild(renderTask(dayInfo.key, task, index, result.taskStatus[task.id]));
+        });
+
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.className = "btn small secondary";
+        addButton.textContent = "+ tarefa";
+        addButton.addEventListener("click", () => {
+          state.selectedDay = dayInfo.key;
+          openQuickTask(state.selectedCategoryId);
+          render();
+        });
+
+        col.appendChild(addButton);
+        els.weekGrid.appendChild(col);
+      });
+    }
+
+    function renderTask(dayKey, task, index, status) {
+      const category = getCategory(task.categoryId);
+      const element = document.createElement("div");
+      element.className = `task ${task.done ? "done" : ""} ${status?.blocked ? "blocked" : ""} ${task.checklistOpen ? "checklist-open" : ""} ${task.detailsOpen ? "open" : ""}`;
+
+      element.innerHTML = `
+        <div class="task-main">
+          <button class="task-icon" type="button" title="Editar categoria e energia">${escapeHTML(category.icon)}</button>
+          <textarea class="task-title" rows="1" placeholder="Nome da tarefa">${escapeHTML(task.title)}</textarea>
+        </div>
+        <div class="task-details">
+          <select class="task-category" title="Categoria">
+            ${state.categories.map(cat => `<option value="${escapeAttribute(cat.id)}" ${cat.id === task.categoryId ? "selected" : ""}>${escapeHTML(cat.icon)} ${escapeHTML(cat.name)}</option>`).join("")}
+          </select>
+          <input class="task-min-energy" type="number" min="${minimumRequiredForDemand(task.energy)}" step="1" value="${task.minEnergy}" title="Energia mínima" />
+          <input class="task-energy" type="number" step="1" value="${task.energy}" title="Energia demandada" />
+        </div>
+        <div class="task-tools">
+          <input class="task-check" type="checkbox" ${task.done ? "checked" : ""} title="Marcar como feita" />
+          <button class="mini-btn move-up" type="button" ${index === 0 ? "disabled" : ""}>↑</button>
+          <button class="mini-btn move-down" type="button" ${index === state.days[dayKey].tasks.length - 1 ? "disabled" : ""}>↓</button>
+          <button class="mini-btn danger delete-task" type="button">×</button>
+          <span class="energy-control">
+            <span class="energy-badge ${energyClass(task.energy)}" title="Energia demandada">${energyLabel(task.energy)}</span>
+            <button class="mini-btn checklist-toggle" type="button" title="Abrir checklist">⌄</button>
+          </span>
+        </div>
+        <div class="checklist">
+          <div class="subtask-list">
+            ${task.subtasks.map(subtask => `
+              <div class="subtask-row ${subtask.done ? "done" : ""}" data-subtask-id="${escapeAttribute(subtask.id)}">
+                <input class="subtask-check" type="checkbox" ${subtask.done ? "checked" : ""} title="Marcar subtarefa como feita" />
+                <input class="subtask-title" type="text" value="${escapeAttribute(subtask.title)}" placeholder="Subtarefa" />
+                <button class="mini-btn danger delete-subtask" type="button">×</button>
+              </div>
+            `).join("")}
+          </div>
+          <div class="add-subtask-row">
+            <input class="new-subtask-input" type="text" placeholder="Nova subtarefa" />
+            <button class="mini-btn add-subtask" type="button">Adicionar</button>
+          </div>
+        </div>
+        ${status?.blocked ? `<div class="warning-text">${status.reason === "minimum" ? `Precisa de ${status.required} energia para começar.` : "Sem energia suficiente nesta ordem."}</div>` : ""}
+        ${status?.capped ? `<div class="warning-text warn">Recarga limitada pelo máximo diário.</div>` : ""}
+      `;
+
+      bindTaskEvents(element, dayKey, task, index);
+      return element;
+    }
+
+    function bindTaskEvents(element, dayKey, task, index) {
+      const titleField = element.querySelector(".task-title");
+      autoResizeTextarea(titleField);
+
+      element.querySelector(".task-icon").addEventListener("click", () => {
+        task.detailsOpen = !task.detailsOpen;
+        render();
+      });
+
+      titleField.addEventListener("input", event => {
+        task.title = event.target.value;
+        autoResizeTextarea(event.target);
+      });
+      titleField.addEventListener("blur", render);
+
+      element.querySelector(".task-check").addEventListener("change", event => {
+        task.done = event.target.checked;
+        render();
+      });
+
+      element.querySelector(".task-category").addEventListener("change", event => {
+        task.categoryId = event.target.value;
+        render();
+      });
+
+      element.querySelector(".task-min-energy").addEventListener("change", event => {
+        task.minEnergy = normalizeMinEnergy(task.energy, event.target.value);
+        render();
+      });
+
+      element.querySelector(".task-energy").addEventListener("change", event => {
+        task.energy = toNumber(event.target.value, 0);
+        task.minEnergy = normalizeMinEnergy(task.energy, task.minEnergy);
+        render();
+      });
+
+      element.querySelector(".move-up").addEventListener("click", () => moveTask(dayKey, index, index - 1));
+      element.querySelector(".move-down").addEventListener("click", () => moveTask(dayKey, index, index + 1));
+      element.querySelector(".delete-task").addEventListener("click", () => deleteTask(dayKey, task.id));
+      element.querySelector(".checklist-toggle").addEventListener("click", () => {
+        task.checklistOpen = !task.checklistOpen;
+        render();
+      });
+
+      element.querySelectorAll(".subtask-row").forEach(row => bindSubtaskEvents(row, task));
+
+      const newSubtaskInput = element.querySelector(".new-subtask-input");
+      const addSubtask = () => {
+        const title = newSubtaskInput.value.trim();
+        if (!title) return;
+        task.subtasks.push({ id: uid("subtask"), title, done: false });
+        task.checklistOpen = true;
+        render();
+      };
+
+      element.querySelector(".add-subtask").addEventListener("click", addSubtask);
+      newSubtaskInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") addSubtask();
+      });
+    }
+
+    function bindSubtaskEvents(row, task) {
+      const subtaskId = row.dataset.subtaskId;
+      const subtask = task.subtasks.find(item => item.id === subtaskId);
+      if (!subtask) return;
+
+      row.querySelector(".subtask-check").addEventListener("change", event => {
+        subtask.done = event.target.checked;
+        render();
+      });
+
+      row.querySelector(".subtask-title").addEventListener("input", event => {
+        subtask.title = event.target.value;
+      });
+      row.querySelector(".subtask-title").addEventListener("blur", render);
+
+      row.querySelector(".delete-subtask").addEventListener("click", () => {
+        task.subtasks = task.subtasks.filter(item => item.id !== subtaskId);
+        render();
+      });
+    }
+
+    function moveTask(dayKey, fromIndex, toIndex) {
+      const tasks = state.days[dayKey].tasks;
+      if (toIndex < 0 || toIndex >= tasks.length) return;
+      const [task] = tasks.splice(fromIndex, 1);
+      tasks.splice(toIndex, 0, task);
+      render();
+    }
+
+    function deleteTask(dayKey, taskId) {
+      state.days[dayKey].tasks = state.days[dayKey].tasks.filter(task => task.id !== taskId);
+      render();
+    }
+
+    function addTaskFromQuickForm() {
+      const category = getCategory(state.selectedCategoryId);
+      const dayKey = els.quickDay.value;
+      const energy = toNumber(els.quickEnergy.value, 0);
+
+      state.days[dayKey].tasks.push({
+        id: uid("task"),
+        categoryId: category.id,
+        title: els.quickTitle.value.trim() || "Nova tarefa",
+        energy,
+        minEnergy: normalizeMinEnergy(energy, els.quickMinEnergy.value),
+        done: false,
+        detailsOpen: false,
+        checklistOpen: false,
+        subtasks: []
+      });
+
+      state.selectedDay = dayKey;
+      els.quickTitle.value = "";
+      els.quickEnergy.value = "";
+      els.quickMinEnergy.value = "";
+      render();
+      showToast("Tarefa adicionada.");
+    }
+
+    function addCategory() {
+      const name = els.newCategory.value.trim();
+      if (!name) {
+        showToast("Escreva um nome para a categoria.");
+        els.newCategory.focus();
+        return;
+      }
+
+      const category = { id: uid("cat"), icon: els.newIcon.value, name };
+      state.categories.push(category);
+      state.selectedCategoryId = category.id;
+      els.newCategory.value = "";
+      render();
+      openQuickTask(category.id);
+    }
+
+    function clearDoneTasks() {
+      let removedTasks = 0;
+      let removedSubtasks = 0;
+
+      Object.values(state.days).forEach(day => {
+        removedTasks += day.tasks.filter(task => task.done).length;
+        day.tasks = day.tasks
+          .filter(task => !task.done)
+          .map(task => {
+            removedSubtasks += task.subtasks.filter(subtask => subtask.done).length;
+            return { ...task, subtasks: task.subtasks.filter(subtask => !subtask.done) };
+          });
+      });
+
+      render();
+      showToast(`Limpeza feita: ${removedTasks} tarefa(s) e ${removedSubtasks} subtarefa(s) removida(s).`);
+    }
+
+    function resetWeek() {
+      state.days = createEmptyDays(6);
+      state.selectedDay = "mon";
+      els.stateBox.value = "";
+      render();
+      showToast("Semana resetada.");
+    }
+
+    function exportStateText() {
+      const exported = ensureValidState(state);
+      return JSON.stringify({ ...exported, exportedAt: new Date().toISOString() }, null, 2);
+    }
+
+    async function copyState() {
+      const text = exportStateText();
+      els.stateBox.value = text;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Estado atual copiado.");
+      } catch (_error) {
+        showToast("Texto gerado no campo. Copie manualmente se necessário.");
+      }
+    }
+
+    function applyState() {
+      const text = els.stateBox.value;
+      if (!String(text).trim()) {
+        showToast("Cole um estado antes de aplicar.");
+        return;
+      }
+
+      try {
+        const parsed = parseStateText(text);
+        state = ensureValidState(parsed);
+        render();
+        showToast("Estado aplicado ao calendário.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        showToast(`Erro ao importar estado: ${message}`);
+        console.error("Erro ao importar estado:", error, { rawText: text });
+      }
+    }
+
+    function handleCategoryClick(event) {
+      const row = event.target.closest(".legend-row");
+      if (!row) return;
+
+      const categoryId = row.dataset.categoryId;
+      const action = event.target.closest("button")?.dataset.action;
+
+      if (action === "remove-category") {
+        deleteCategory(categoryId);
+        return;
+      }
+
+      if (action === "select-category") {
+        openQuickTask(categoryId);
+        render();
+      }
+    }
+
+    function render() {
+      state = ensureValidState(state);
+      els.maxEnergy.value = state.maxEnergy;
+      enforceQuickMinEnergy();
+      renderQuickDayOptions();
+      renderCategories();
+      renderHeader();
+      renderWeek();
+
+      const selectedCategory = getCategory(state.selectedCategoryId);
+      if (selectedCategory && !els.quickTaskCard.hidden) {
+        els.quickCategoryName.value = `${selectedCategory.icon} ${selectedCategory.name}`;
+      }
+    }
+
+    function bindEvents() {
+      els.maxEnergy.addEventListener("change", event => {
+        state.maxEnergy = Math.max(1, toNumber(event.target.value, 10));
+        render();
+      });
+
+      els.categoryList.addEventListener("click", handleCategoryClick);
+      els.clearDone.addEventListener("click", clearDoneTasks);
+      els.resetWeek.addEventListener("click", resetWeek);
+      els.addCategory.addEventListener("click", addCategory);
+      els.addQuickTask.addEventListener("click", addTaskFromQuickForm);
+      els.copyState.addEventListener("click", copyState);
+      els.applyState.addEventListener("click", applyState);
+
+      els.quickDay.addEventListener("change", event => {
+        state.selectedDay = event.target.value;
+        render();
+        openQuickTask(state.selectedCategoryId);
+      });
+
+      els.quickEnergy.addEventListener("input", enforceQuickMinEnergy);
+      els.quickMinEnergy.addEventListener("input", enforceQuickMinEnergy);
+
+      [els.quickTitle, els.quickEnergy, els.quickMinEnergy].forEach(input => {
+        input.addEventListener("keydown", event => {
+          if (event.key === "Enter") addTaskFromQuickForm();
+        });
+      });
+
+      els.newCategory.addEventListener("keydown", event => {
+        if (event.key === "Enter") addCategory();
+      });
+    }
+
+    renderIconOptions();
+    bindEvents();
+    render();
+  </script>
+</body>
+</html>
